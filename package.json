@@ -1,0 +1,41 @@
+{
+  "name": "@byteagent/monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @byteagent/* dev",
+    "build": "pnpm --parallel --filter @byteagent/* build",
+    "start": "pnpm --parallel --filter @byteagent/* start",
+    "api:dev": "pnpm --filter @byteagent/api dev",
+    "api:build": "pnpm --filter @byteagent/api build",
+    "api:start": "pnpm --filter @byteagent/api start",
+    "web:dev": "pnpm --filter @byteagent/web dev",
+    "web:build": "pnpm --filter @byteagent/web build",
+    "web:start": "pnpm --filter @byteagent/web start",
+    "device-api:dev": "pnpm --filter @byteagent/device-api dev",
+    "device-api:build": "pnpm --filter @byteagent/device-api build",
+    "device-api:start": "pnpm --filter @byteagent/device-api start",
+    "db:push": "pnpm --filter @byteagent/db push",
+    "db:migrate": "pnpm --filter @byteagent/db migrate",
+    "db:generate": "pnpm --filter @byteagent/db generate",
+    "db:studio": "pnpm --filter @byteagent/db studio",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0",
+    "vitest": "^4.0.16",
+    "vue-eslint-parser": "^10.2.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@byteagent/api",
+  "version": "1.0.50",
+  "scripts": {
+    "dev": "bun run --env-file=../../.env --watch src/index.ts",
+    "build": "bun build src/index.ts --outfile dist/index.js --target bun --minify",
+    "start": "bun run dist/index.js"
+  },
+  "dependencies": {
+    "elysia": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "module": "src/index.js"
+}
