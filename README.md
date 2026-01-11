@@ -27,13 +27,13 @@ cp .env.example .env
 pnpm install
 ```
 
-<details>
-<summary>Environment Variables</summary>
+<details><summary>Environment Variables</summary>
 - `DATABASE_URL`: PostgreSQL 连接字符串
 - `ROOT_USER`: 超级管理员用户名
 - `ROOT_USER_PASSWORD`: 超级管理员密码
 - `JWT_SECRET`: JWT 签名密钥
 - `QDRANT_URL`: Qdrant 连接字符串
+- `REDIS_URL`: Redis 连接字符串
 </details>
 
 ### 数据库初始化

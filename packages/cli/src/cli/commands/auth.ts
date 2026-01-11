@@ -2,9 +2,8 @@ import type { Command } from 'commander'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
 import ora from 'ora'
-import { createClient } from '../client'
-import { setToken, clearToken, getToken, getApiUrl, setApiUrl } from '../config'
-import { formatError } from '../utils'
+import * as authCore from '../../core/auth'
+import { formatError } from '../../utils'
 
 export function authCommands(program: Command) {
   program
@@ -38,28 +37,15 @@ export function authCommands(program: Command) {
         }
 
         const spinner = ora('Logging in...').start()
-        const client = createClient()
 
-        const response = await client.auth.login.post({
-          username,
-          password,
-        })
-
-        if (response.error) {
-          spinner.fail(chalk.red('Login failed'))
-          console.error(chalk.red(formatError(response.error.value)))
-          process.exit(1)
-        }
-
-        const data = response.data as { success?: boolean; data?: { token?: string; user?: { username: string; role: string } } } | null
-        if (data?.success && data?.data?.token && data?.data?.user) {
-          setToken(data.data.token)
+        try {
+          const result = await authCore.login({ username, password })
           spinner.succeed(chalk.green('Login successful!'))
-          console.log(chalk.blue(`User: ${data.data.user.username}`))
-          console.log(chalk.blue(`Role: ${data.data.user.role}`))
-        } else {
+          console.log(chalk.blue(`User: ${result.user?.username}`))
+          console.log(chalk.blue(`Role: ${result.user?.role}`))
+        } catch (error) {
           spinner.fail(chalk.red('Login failed'))
-          console.error(chalk.red('Invalid response format'))
+          console.error(chalk.red(formatError(error)))
           process.exit(1)
         }
       } catch (error) {
@@ -73,13 +59,12 @@ export function authCommands(program: Command) {
     .command('logout')
     .description('Logout current user')
     .action(() => {
-      const token = getToken()
-      if (!token) {
+      if (!authCore.isLoggedIn()) {
         console.log(chalk.yellow('Not currently logged in'))
         return
       }
 
-      clearToken()
+      authCore.logout()
       console.log(chalk.green('✓ Logged out'))
     })
 
@@ -88,32 +73,24 @@ export function authCommands(program: Command) {
     .description('View current logged in user')
     .action(async () => {
       try {
-        const token = getToken()
-        if (!token) {
+        if (!authCore.isLoggedIn()) {
           console.log(chalk.yellow('Not currently logged in'))
           console.log(chalk.dim('Use "memohome auth login" to login'))
           return
         }
 
         const spinner = ora('Fetching user information...').start()
-        const client = createClient()
 
-        const response = await client.auth.me.get()
-
-        if (response.error) {
-          spinner.fail(chalk.red('Failed to fetch user information'))
-          console.error(chalk.red(formatError(response.error.value)))
-          process.exit(1)
-        }
-
-        const data = response.data as { success?: boolean; data?: { username: string; role: string; id: string } } | null
-        if (data?.success && data?.data) {
+        try {
+          const user = await authCore.getCurrentUser()
           spinner.succeed(chalk.green('Logged in'))
-          console.log(chalk.blue(`Username: ${data.data.username}`))
-          console.log(chalk.blue(`Role: ${data.data.role}`))
-          console.log(chalk.blue(`User ID: ${data.data.id}`))
-        } else {
+          console.log(chalk.blue(`Username: ${user.username}`))
+          console.log(chalk.blue(`Role: ${user.role}`))
+          console.log(chalk.blue(`User ID: ${user.id}`))
+        } catch (error) {
           spinner.fail(chalk.red('Failed to fetch user information'))
+          console.error(chalk.red(formatError(error)))
+          process.exit(1)
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
@@ -129,14 +106,13 @@ export function authCommands(program: Command) {
     .action((options) => {
       if (options.set) {
         const url = options.set
-        setApiUrl(url)
+        authCore.setConfig(url)
         console.log(chalk.green(`✓ API URL set to: ${url}`))
       } else {
-        const apiUrl = getApiUrl()
-        const token = getToken()
+        const config = authCore.getConfig()
         console.log(chalk.blue('Current configuration:'))
-        console.log(chalk.dim(`API URL: ${apiUrl}`))
-        console.log(chalk.dim(`Logged in: ${token ? 'Yes' : 'No'}`))
+        console.log(chalk.dim(`API URL: ${config.apiUrl}`))
+        console.log(chalk.dim(`Logged in: ${config.loggedIn ? 'Yes' : 'No'}`))
       }
     })
 }

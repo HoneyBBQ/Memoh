@@ -1,16 +1,20 @@
 {
-  "name": "@memohome/cli",
+  "name": "@memohome/client",
   "version": "1.0.0",
-  "description": "Command line interface for MemoHome API",
+  "description": "Command line interface and core API for MemoHome",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./core": "./src/core/index.ts",
+    "./types": "./src/types/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./cli": "./src/cli/index.ts"
   },
   "bin": {
-    "memohome": "./src/index.ts"
+    "memohome": "./src/cli/index.ts"
   },
   "scripts": {
-    "start": "bun run src/index.ts",
-    "dev": "bun run --watch src/index.ts"
+    "start": "bun run src/cli/index.ts",
+    "dev": "bun run --watch src/cli/index.ts"
   },
   "dependencies": {
     "@elysiajs/eden": "^1.4.6",

@@ -32,7 +32,6 @@ export function loadConfig(): Config {
     const data = readFileSync(CONFIG_FILE, 'utf-8')
     return { ...DEFAULT_CONFIG, ...JSON.parse(data) }
   } catch {
-    console.error('Failed to load config, using defaults')
     return DEFAULT_CONFIG
   }
 }

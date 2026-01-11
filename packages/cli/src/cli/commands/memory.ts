@@ -1,8 +1,8 @@
 import type { Command } from 'commander'
 import chalk from 'chalk'
 import ora from 'ora'
-import { table } from 'table'
-import { createClient, requireAuth } from '../client'
+import * as memoryCore from '../../core/memory'
+import { formatError } from '../../utils'
 
 export function memoryCommands(program: Command) {
   program
@@ -11,41 +11,35 @@ export function memoryCommands(program: Command) {
     .option('-l, --limit <limit>', 'Number of results to return', '10')
     .action(async (query, options) => {
       try {
-        requireAuth()
         const spinner = ora('Searching memories...').start()
-        const client = createClient()
 
-        const response = await client.memory.search.get({
-          query: {
-            q: query,
+        try {
+          const results = await memoryCore.searchMemory({
+            query,
             limit: parseInt(options.limit),
-          },
-        })
+          })
 
-        if (response.error) {
-          spinner.fail(chalk.red('Search failed'))
-          console.error(chalk.red(response.error.value))
-          process.exit(1)
-        }
+          spinner.succeed(chalk.green(`Found ${results.length} memories`))
 
-        const data = response.data as any
-        if (data?.success && data?.data) {
-          spinner.succeed(chalk.green(`Found ${data.data.length} memories`))
-
-          if (data.data.length === 0) {
+          if (results.length === 0) {
             console.log(chalk.yellow('No related memories found'))
             return
           }
 
-          data.data.forEach((item: any, index: number) => {
+          results.forEach((item, index) => {
             console.log()
-            console.log(chalk.blue(`[${index + 1}] Similarity: ${(item.similarity * 100).toFixed(2)}%`))
+            console.log(chalk.blue(`[${index + 1}] Similarity: ${((item.similarity || 0) * 100).toFixed(2)}%`))
             console.log(chalk.dim(`Time: ${new Date(item.timestamp).toLocaleString('en-US')}`))
             console.log(chalk.white(item.content))
           })
+        } catch (error) {
+          spinner.fail(chalk.red('Search failed'))
+          console.error(chalk.red(formatError(error)))
+          process.exit(1)
         }
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })
@@ -55,26 +49,19 @@ export function memoryCommands(program: Command) {
     .description('Add memory')
     .action(async (content) => {
       try {
-        requireAuth()
         const spinner = ora('Adding memory...').start()
-        const client = createClient()
 
-        const response = await client.memory.post({
-          content,
-        })
-
-        if (response.error) {
+        try {
+          await memoryCore.addMemory({ content })
+          spinner.succeed(chalk.green('Memory added'))
+        } catch (error) {
           spinner.fail(chalk.red('Failed to add memory'))
-          console.error(chalk.red(response.error.value))
+          console.error(chalk.red(formatError(error)))
           process.exit(1)
         }
-
-        const data = response.data as any
-        if (data?.success) {
-          spinner.succeed(chalk.green('Memory added'))
-        }
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })
@@ -87,26 +74,15 @@ export function memoryCommands(program: Command) {
     .option('-l, --limit <limit>', 'Items per page', '20')
     .action(async (options) => {
       try {
-        requireAuth()
         const spinner = ora('Fetching message history...').start()
-        const client = createClient()
 
-        const response = await client.memory.message.get({
-          query: {
+        try {
+          const result = await memoryCore.getMessages({
             page: parseInt(options.page),
             limit: parseInt(options.limit),
-          },
-        })
+          })
 
-        if (response.error) {
-          spinner.fail(chalk.red('Failed to fetch messages'))
-          console.error(chalk.red(response.error.value))
-          process.exit(1)
-        }
-
-        const data = response.data as any
-        if (data?.success && data?.data) {
-          const { messages, pagination } = data.data
+          const { messages, pagination } = result
           spinner.succeed(chalk.green(`Message History (Page ${pagination.page}/${pagination.totalPages})`))
 
           if (messages.length === 0) {
@@ -116,7 +92,7 @@ export function memoryCommands(program: Command) {
 
           console.log(chalk.dim(`\nTotal: ${pagination.total} messages\n`))
 
-          messages.forEach((msg: any) => {
+          messages.forEach((msg) => {
             const roleColor = msg.role === 'user' ? chalk.blue : chalk.green
             const roleIcon = msg.role === 'user' ? '👤' : '🤖'
             console.log(roleColor(`${roleIcon} ${msg.role.toUpperCase()}`))
@@ -124,9 +100,14 @@ export function memoryCommands(program: Command) {
             console.log(chalk.white(msg.content))
             console.log()
           })
+        } catch (error) {
+          spinner.fail(chalk.red('Failed to fetch messages'))
+          console.error(chalk.red(formatError(error)))
+          process.exit(1)
         }
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })
@@ -138,8 +119,6 @@ export function memoryCommands(program: Command) {
     .option('-e, --end <date>', 'End date (ISO 8601)')
     .action(async (options) => {
       try {
-        requireAuth()
-
         if (!options.start || !options.end) {
           console.error(chalk.red('Please provide start and end dates'))
           console.log(chalk.dim('Example: memohome memory filter -s 2024-01-01T00:00:00Z -e 2024-12-31T23:59:59Z'))
@@ -147,33 +126,23 @@ export function memoryCommands(program: Command) {
         }
 
         const spinner = ora('Filtering messages...').start()
-        const client = createClient()
 
-        const response = await client.memory.message.filter.get({
-          query: {
+        try {
+          const messages = await memoryCore.filterMessages({
             startDate: options.start,
             endDate: options.end,
-          },
-        })
+          })
 
-        if (response.error) {
-          spinner.fail(chalk.red('Failed to filter messages'))
-          console.error(chalk.red(response.error.value))
-          process.exit(1)
-        }
+          spinner.succeed(chalk.green(`Found ${messages.length} messages`))
 
-        const data = response.data as any
-        if (data?.success && data?.data) {
-          spinner.succeed(chalk.green(`Found ${data.data.length} messages`))
-
-          if (data.data.length === 0) {
+          if (messages.length === 0) {
             console.log(chalk.yellow('No messages found'))
             return
           }
 
           console.log()
 
-          data.data.forEach((msg: any) => {
+          messages.forEach((msg) => {
             const roleColor = msg.role === 'user' ? chalk.blue : chalk.green
             const roleIcon = msg.role === 'user' ? '👤' : '🤖'
             console.log(roleColor(`${roleIcon} ${msg.role.toUpperCase()}`))
@@ -181,9 +150,14 @@ export function memoryCommands(program: Command) {
             console.log(chalk.white(msg.content))
             console.log()
           })
+        } catch (error) {
+          spinner.fail(chalk.red('Failed to filter messages'))
+          console.error(chalk.red(formatError(error)))
+          process.exit(1)
         }
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })

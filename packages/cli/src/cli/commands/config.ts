@@ -2,7 +2,8 @@ import type { Command } from 'commander'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
 import ora from 'ora'
-import { createClient, requireAuth } from '../client'
+import * as settingsCore from '../../core/settings'
+import { formatError } from '../../utils'
 
 export function configCommands(program: Command) {
   program
@@ -10,21 +11,10 @@ export function configCommands(program: Command) {
     .description('Get current user settings')
     .action(async () => {
       try {
-        requireAuth()
         const spinner = ora('Fetching settings...').start()
-        const client = createClient()
 
-        const response = await client.settings.get()
-
-        if (response.error) {
-          spinner.fail(chalk.red('Failed to fetch settings'))
-          console.error(chalk.red(response.error.value))
-          process.exit(1)
-        }
-
-        const data = response.data as any
-        if (data?.success && data?.data) {
-          const settings = data.data
+        try {
+          const settings = await settingsCore.getSettings()
           spinner.succeed(chalk.green('Current Settings'))
           console.log()
           console.log(chalk.blue('🎯 Agent Configuration:'))
@@ -40,9 +30,14 @@ export function configCommands(program: Command) {
           console.log(chalk.dim(`  User ID: ${settings.userId}`))
           console.log(chalk.dim(`  Created At: ${new Date(settings.createdAt).toLocaleString('en-US')}`))
           console.log(chalk.dim(`  Updated At: ${new Date(settings.updatedAt).toLocaleString('en-US')}`))
+        } catch (error) {
+          spinner.fail(chalk.red('Failed to fetch settings'))
+          console.error(chalk.red(formatError(error)))
+          process.exit(1)
         }
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })
@@ -57,9 +52,13 @@ export function configCommands(program: Command) {
     .option('--embedding-model <id>', 'Default embedding model ID')
     .action(async (options) => {
       try {
-        requireAuth()
-
-        const updates: any = {}
+        const updates: {
+          language?: string
+          maxContextLoadTime?: number
+          defaultChatModel?: string
+          defaultSummaryModel?: string
+          defaultEmbeddingModel?: string
+        } = {}
 
         if (options.language) updates.language = options.language
         if (options.maxContextTime)
@@ -81,27 +80,23 @@ export function configCommands(program: Command) {
         }
 
         const spinner = ora('Updating settings...').start()
-        const client = createClient()
 
-        const response = await client.settings.put(updates)
-
-        if (response.error) {
-          spinner.fail(chalk.red('Failed to update settings'))
-          console.error(chalk.red(response.error.value))
-          process.exit(1)
-        }
-
-        const data = response.data as any
-        if (data?.success) {
+        try {
+          await settingsCore.updateSettings(updates)
           spinner.succeed(chalk.green('Settings updated'))
           console.log()
           console.log(chalk.blue('Updated settings:'))
           Object.entries(updates).forEach(([key, value]) => {
             console.log(chalk.dim(`  ${key}: ${value}`))
           })
+        } catch (error) {
+          spinner.fail(chalk.red('Failed to update settings'))
+          console.error(chalk.red(formatError(error)))
+          process.exit(1)
         }
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })
@@ -111,8 +106,6 @@ export function configCommands(program: Command) {
     .description('Interactive settings wizard')
     .action(async () => {
       try {
-        requireAuth()
-
         console.log(chalk.green.bold('\n🎨 Settings Wizard\n'))
 
         const answers = await inquirer.prompt([
@@ -153,27 +146,32 @@ export function configCommands(program: Command) {
         ])
 
         // Filter out empty values
-        const updates: any = {}
+        const updates: {
+          language?: string
+          maxContextLoadTime?: number
+          defaultChatModel?: string
+          defaultSummaryModel?: string
+          defaultEmbeddingModel?: string
+        } = {}
         Object.entries(answers).forEach(([key, value]) => {
           if (value) {
-            updates[key] = value
+            updates[key as keyof typeof updates] = value as never
           }
         })
 
         const spinner = ora('Saving settings...').start()
-        const client = createClient()
 
-        const response = await client.settings.put(updates)
-
-        if (response.error) {
+        try {
+          await settingsCore.updateSettings(updates)
+          spinner.succeed(chalk.green('Settings saved'))
+        } catch (error) {
           spinner.fail(chalk.red('Failed to save settings'))
-          console.error(chalk.red(response.error.value))
+          console.error(chalk.red(formatError(error)))
           process.exit(1)
         }
-
-        spinner.succeed(chalk.green('Settings saved'))
-      } catch (error: any) {
-        console.error(chalk.red('Error:'), error.message)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(chalk.red('Error:'), message)
         process.exit(1)
       }
     })

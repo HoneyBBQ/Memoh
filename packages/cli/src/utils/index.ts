@@ -1,5 +1,3 @@
-import chalk from 'chalk'
-
 /**
  * Format API error information
  */
@@ -38,26 +36,5 @@ export function formatError(error: unknown): string {
   }
   
   return String(error)
-}
-
-/**
- * Print error and exit
- */
-export function exitWithError(message: string, error?: unknown): never {
-  console.error(chalk.red(message))
-  if (error) {
-    console.error(chalk.red(formatError(error)))
-  }
-  process.exit(1)
-}
-
-/**
- * Handle Eden Treaty response errors
- */
-export function handleApiError(response: { error?: { value: unknown } }, defaultMessage = 'Operation failed'): never {
-  if (response.error) {
-    exitWithError(defaultMessage, response.error.value)
-  }
-  exitWithError(defaultMessage, 'Unknown error')
 }
 
