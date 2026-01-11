@@ -1,0 +1,30 @@
+{
+  "name": "@memohome/platform-telegram",
+  "version": "1.0.0",
+  "description": "Telegram platform for MemoHome",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "main": "src/index.ts",
+  "bin": {
+    "memohome-tg-bot": "./src/bot.ts"
+  },
+  "scripts": {
+    "start": "bun run src/bot.ts",
+    "dev": "bun run --watch src/bot.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.27.0",
+  "dependencies": {
+    "@memohome/client": "workspace:*",
+    "@memohome/platform": "workspace:*",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.9.1",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5"
+  }
+}
