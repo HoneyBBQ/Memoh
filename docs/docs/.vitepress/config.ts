@@ -6,7 +6,8 @@ export default defineConfig({
   description: '长记忆、自托管、AI 驱动的个人生活助手',
   
   // GitHub Pages 部署配置
-  base: '/Memoh/',
+  // 使用自定义域名时，base 应该是 /
+  base: '/',
   
   // 主题配置
   themeConfig: {
