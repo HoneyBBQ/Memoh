@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="./assets/logo.png" alt="Memoh" width="100" height="100">
   <h1>Memoh</h1>
   <p>Long-memory, self-hosted, AI-powered personal housekeeper and lifemate.</p>
 </div>
