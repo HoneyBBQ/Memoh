@@ -103,6 +103,18 @@ export {
   type UpdateScheduleParams,
 } from './schedule'
 
+// MCP
+export {
+  listMCPConnections,
+  createMCPConnection,
+  getMCPConnection,
+  updateMCPConnection,
+  deleteMCPConnection,
+  toggleMCPConnection,
+  type CreateMCPConnectionParams,
+  type UpdateMCPConnectionParams,
+} from './mcp'
+
 // Settings
 export {
   getSettings,

@@ -1,9 +1,11 @@
-import { streamText, generateText, ModelMessage, stepCountIs, UserModelMessage } from 'ai'
+import { streamText, generateText, ModelMessage, stepCountIs, UserModelMessage, Tool } from 'ai'
 import { AgentParams } from './types'
 import { system, schedule as schedulePrompt } from './prompts'
 import { getMemoryTools, getScheduleTools, getMessageTools } from './tools'
 import { createChatGateway } from '@memoh/ai-gateway'
-import { Schedule } from '@memoh/shared'
+import { MCPConnection, Schedule } from '@memoh/shared'
+import { createMCPClient } from '@ai-sdk/mcp'
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 export const createAgent = (params: AgentParams) => {
   const messages: ModelMessage[] = []
@@ -16,8 +18,37 @@ export const createAgent = (params: AgentParams) => {
   const currentPlatform = params.platforms
     ? platforms.find(p => p.name === params.currentPlatform)?.name ?? 'Unknown Platform'
     : 'client'
+  const mcpConnections = params.mcpConnections ?? []
+
+  const launchMCPConnections = async () => {
+    const launch = async (connection: MCPConnection) => {
+      if (connection.type === 'http' || connection.type === 'sse') {
+        return await createMCPClient({
+          transport: {
+            url: connection.url,
+            headers: connection.headers,
+            type: connection.type,
+          }
+        })
+      } else if (connection.type === 'stdio') {
+        return await createMCPClient({
+          transport: new StdioClientTransport({
+            command: connection.command,
+            args: connection.args,
+            env: connection.env,
+            cwd: connection.cwd,
+          }),
+        })
+      }
+    }
+    const connections = await Promise.all(mcpConnections.map(launch))
+    return connections.filter(connection => connection !== undefined)
+  }
 
   const getTools = async () => {
+    const connections = await launchMCPConnections()
+    const mcpTools = await Promise.all(connections.map(connection => connection.tools())) as Record<string, Tool>[]
+    const tools = Object.assign({}, ...mcpTools)
     return {
       ...getMemoryTools({
         searchMemory: params.onSearchMemory ?? (() => Promise.resolve([]))
@@ -31,6 +62,7 @@ export const createAgent = (params: AgentParams) => {
         platforms,
         params.onSendMessage ?? (() => Promise.resolve())
       ),
+      ...tools,
     }
   }
 

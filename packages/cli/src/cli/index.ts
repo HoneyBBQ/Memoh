@@ -10,6 +10,7 @@ import { agentCommands, startInteractiveMode } from './commands/agent'
 import { memoryCommands } from './commands/memory'
 import { configCommands } from './commands/config'
 import { scheduleCommands } from './commands/schedule'
+import { mcpCommands } from './commands/mcp'
 import { debugCommands } from './commands/debug'
 
 const program = new Command()
@@ -50,6 +51,10 @@ configCommands(config)
 // Schedule management commands
 const schedule = program.command('schedule').description('Schedule management')
 scheduleCommands(schedule)
+
+// MCP management commands
+const mcp = program.command('mcp').description('MCP connection management')
+mcpCommands(mcp)
 
 // Debug commands
 const debug = program.command('debug').description('Debug tools')

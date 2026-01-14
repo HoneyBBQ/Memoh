@@ -3,6 +3,7 @@ import { createMemory, filterByTimestamp, MemoryUnit } from '@memoh/memory'
 import { ChatModel, EmbeddingModel, Platform, Schedule } from '@memoh/shared'
 import { createSchedule, deleteSchedule, getActiveSchedules } from '../schedule/service'
 import { getActivePlatforms, sendMessageToPlatform } from '../platform/service'
+import { getActiveMCPConnections } from '../mcp/service'
 
 // Type for messages passed to onFinish callback
 type MessageType = Record<string, unknown>
@@ -37,6 +38,7 @@ export async function createAgent(params: CreateAgentStreamParams) {
   })
 
   const platforms = await getActivePlatforms()
+  const mcpConnections = await getActiveMCPConnections(userId)
 
   // Create agent
   const agent = createAgentService({
@@ -45,6 +47,7 @@ export async function createAgent(params: CreateAgentStreamParams) {
     language: language || 'Same as user input',
     platforms: platforms as Platform[],
     currentPlatform: platform,
+    mcpConnections,
     onSendMessage: async (platform: string, options) => {
       await sendMessageToPlatform(platform, {
         message: options.message,

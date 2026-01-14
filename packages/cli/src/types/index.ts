@@ -79,3 +79,37 @@ export interface Platform {
   updatedAt: string
 }
 
+export interface MCPConnection {
+  id: string
+  type: string
+  name: string
+  config: MCPConnectionConfig
+  active: boolean
+  user: string
+}
+
+export type MCPConnectionConfig = 
+  | StdioMCPConnection 
+  | HTTPMCPConnection 
+  | SSEMCPConnection
+
+export interface StdioMCPConnection {
+  type: 'stdio'
+  command: string
+  args: string[]
+  env: Record<string, string>
+  cwd: string
+}
+
+export interface HTTPMCPConnection {
+  type: 'http'
+  url: string
+  headers: Record<string, string>
+}
+
+export interface SSEMCPConnection {
+  type: 'sse'
+  url: string
+  headers: Record<string, string>
+}
+

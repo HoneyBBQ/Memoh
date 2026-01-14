@@ -1,5 +1,5 @@
 import type { MemoryUnit } from '@memoh/memory'
-import { ChatModel, Platform, Schedule } from '@memoh/shared'
+import { ChatModel, MCPConnection, Platform, Schedule } from '@memoh/shared'
 import { ModelMessage } from 'ai'
 
 export interface SendMessageOptions {
@@ -25,6 +25,8 @@ export interface AgentParams {
   platforms?: Platform[]
 
   currentPlatform?: string
+
+  mcpConnections?: MCPConnection[]
 
   onSendMessage?: (platform: string, options: SendMessageOptions) => Promise<void>
 

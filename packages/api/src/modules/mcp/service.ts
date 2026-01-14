@@ -3,6 +3,7 @@ import { mcpConnection } from '@memoh/db/schema'
 import { eq, desc, asc, sql } from 'drizzle-orm'
 import { calculateOffset, createPaginatedResult, type PaginatedResult } from '../../utils/pagination'
 import type { CreateMCPConnectionInput, UpdateMCPConnectionInput } from './model'
+import { MCPConnection } from '@memoh/shared'
 
 /**
  * MCP Connection 列表返回类型
@@ -77,14 +78,7 @@ export const getActiveMCPConnections = async (
     .where(eq(mcpConnection.user, userId))
     .orderBy(desc(mcpConnection.id))
 
-  return connections.filter(conn => conn.active).map(conn => ({
-    id: conn.id,
-    type: conn.type,
-    name: conn.name,
-    config: conn.config,
-    active: conn.active,
-    user: conn.user,
-  }))
+  return connections.filter(conn => conn.active).map(conn => conn.config) as MCPConnection[]
 }
 
 /**

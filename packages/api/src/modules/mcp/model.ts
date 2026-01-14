@@ -3,8 +3,6 @@ import { z } from 'zod'
 // Stdio MCP 连接配置
 const StdioMCPConnectionSchema = z.object({
   type: z.literal('stdio'),
-  name: z.string().min(1, 'Name is required').max(100),
-  active: z.boolean(),
   command: z.string().min(1, 'Command is required'),
   args: z.array(z.string()),
   env: z.record(z.string(), z.string()),
@@ -14,8 +12,6 @@ const StdioMCPConnectionSchema = z.object({
 // HTTP MCP 连接配置
 const HTTPMCPConnectionSchema = z.object({
   type: z.literal('http'),
-  name: z.string().min(1, 'Name is required').max(100),
-  active: z.boolean(),
   url: z.string().url('Invalid URL'),
   headers: z.record(z.string(), z.string()),
 })
@@ -23,8 +19,6 @@ const HTTPMCPConnectionSchema = z.object({
 // SSE MCP 连接配置
 const SSEMCPConnectionSchema = z.object({
   type: z.literal('sse'),
-  name: z.string().min(1, 'Name is required').max(100),
-  active: z.boolean(),
   url: z.string().url('Invalid URL'),
   headers: z.record(z.string(), z.string()),
 })

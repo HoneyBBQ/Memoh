@@ -1,7 +1,6 @@
 export interface BaseMCPConnection {
   type: string
   name: string
-  active: boolean
 }
 
 export interface StdioMCPConnection extends BaseMCPConnection {
