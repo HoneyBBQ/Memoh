@@ -26,12 +26,7 @@ Memoh是一个专属于你的AI私人管家，你可以把它跑在你的NAS，�
 
 ## Development
 
-你需要先安装mise，然后执行以下命令：
-
-```bash
-mise install
-mise run dev
-```
+Refer to [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ## Star History
 
