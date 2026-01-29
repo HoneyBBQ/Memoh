@@ -98,11 +98,11 @@ const sidebarInfo = computed(() => [
     name: 'chat',
     icon: mdiChatOutline
   },
-  {
-    title: t('slidebar.home'),
-    name: 'home',
-    icon: mdiHome
-  },
+  // {
+  //   title: t('slidebar.home'),
+  //   name: 'home',
+  //   icon: mdiHome
+  // },
   {
     title: t('slidebar.model_setting'),
     name: 'models',

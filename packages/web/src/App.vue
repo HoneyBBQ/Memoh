@@ -4,17 +4,30 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from '@memoh/ui'
 import SvgIcon from '@jamescoyle/vue-icon'
-import { mdiTranslate } from '@mdi/js'
+import { mdiTranslate, mdiBrightness6 } from '@mdi/js'
+import { useColorMode } from '@vueuse/core'
 
+const mode = useColorMode()
+const modeToggleMap:Record<'dark'|'light','dark'|'light'> = {
+  dark: 'light',
+  light:'dark'
+}
+console.log(mode.value)
+const toggleMode = () => {
+  if (mode.value !== 'auto') {
+    mode.value = modeToggleMap[mode.value]  
+  }
+  
+}
 </script>
 
 <template>
   <section>
     <div
-      class="fixed top-8 right-2 z-9999 [&:is(:has([data-state=open]))_.translate-icon]:opacity-100"
+      class="fixed top-0 flex right-8 z-9999 [&:is(:has([data-state=open]))_.translate-icon]:opacity-100 align h-16 items-center"
     >
       <DropdownMenu>
         <DropdownMenuTrigger class="ml-auto mr-4 cursor-pointer">
@@ -33,6 +46,13 @@ import { mdiTranslate } from '@mdi/js'
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      <svg-icon
+        type="mdi"
+        :path="mdiBrightness6"
+        class="translate-icon opacity-30 hover:opacity-100 cursor-pointer"
+        @click="toggleMode"
+      />
     </div>
     <RouterView />
   </section>

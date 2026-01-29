@@ -1,6 +1,6 @@
 <template>
   <div class="flex gap-4 items-start">
-    <div class=" p-2 rounded-full bg-[#F9F9F9]">
+    <div class=" p-2 rounded-full bg-[#F9F9F9] dark:bg-[#666] ">
       <svg-icon
         type="mdi"
         :path="mdiRobotOutline"
@@ -12,11 +12,59 @@
       </sup>
       <p class="leading-7 text-muted-foreground break-all">
         <template v-if="robotSay.state==='thinking'">
-          <img
-            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSI0IiBjeT0iMTIiIHI9IjMiIGZpbGw9ImN1cnJlbnRDb2xvciI+PGFuaW1hdGUgaWQ9IlNWRzlJZ2JSYnNsIiBhdHRyaWJ1dGVOYW1lPSJyIiBiZWdpbj0iMDtTVkdGVU5wQ1dkRy5lbmQtMC4yNXMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIgZmlsbD0iY3VycmVudENvbG9yIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJyIiBiZWdpbj0iU1ZHOUlnYlJic2wuZW5kLTAuNnMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMyIgZmlsbD0iY3VycmVudENvbG9yIj48YW5pbWF0ZSBpZD0iU1ZHRlVOcENXZEciIGF0dHJpYnV0ZU5hbWU9InIiIGJlZ2luPSJTVkc5SWdiUmJzbC5lbmQtMC40NXMiIGR1cj0iMC43NXMiIHZhbHVlcz0iMzsuMjszIi8+PC9jaXJjbGU+PC9zdmc+"
-            class="inline"
-            alt="thinking"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
           >
+            <circle
+              cx="4"
+              cy="12"
+              r="3"
+              fill="currentColor"
+            >
+              <animate
+                id="SVG7x14Dcom"
+                fill="freeze"
+                attributeName="opacity"
+                begin="0;SVGqSjG0dUp.end-0.25s"
+                dur="0.75s"
+                values="1;0.2"
+              />
+            </circle>
+            <circle
+              cx="12"
+              cy="12"
+              r="3"
+              fill="currentColor"
+              opacity="0.4"
+            >
+              <animate
+                fill="freeze"
+                attributeName="opacity"
+                begin="SVG7x14Dcom.begin+0.15s"
+                dur="0.75s"
+                values="1;0.2"
+              />
+            </circle>
+            <circle
+              cx="20"
+              cy="12"
+              r="3"
+              fill="currentColor"
+              opacity="0.3"
+            >
+              <animate
+                id="SVGqSjG0dUp"
+                fill="freeze"
+                attributeName="opacity"
+                begin="SVG7x14Dcom.begin+0.3s"
+                dur="0.75s"
+                values="1;0.2"
+              />
+            </circle>
+          </svg>
         </template>
         <template v-else>
           <MarkdownRender

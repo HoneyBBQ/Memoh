@@ -22,13 +22,14 @@
 <script setup lang="ts">
 import UserChat from './UserChat/index.vue'
 import RobotChat from './RobotChat/index.vue'
-import { inject, ref, watch } from 'vue'
+import { inject, nextTick, ref, watch } from 'vue'
 import { useElementBounding } from '@vueuse/core'
 import { useChatList } from '@/store/ChatList'
 import { onBeforeRouteLeave } from 'vue-router'
+import { storeToRefs } from 'pinia'
 // 模拟一下数据
 const {chatList,add} = useChatList()
-
+const { loading}=storeToRefs(useChatList())
 const chatSay = inject('chatSay', ref(''))
 // 模拟一下对话
 watch(chatSay, () => {
@@ -80,13 +81,17 @@ watch(height, (newVal,oldVal) => {
     }
     prevScroll = curScroll
   }
+ 
   if (oldVal === 0 && newVal > container.clientHeight) {   
-    container.scrollTo({
-      top: cacheScroll,
-    }) 
+    nextTick(() => {
+      container.scrollTo({
+        top: cacheScroll,
+      })       
+    })
     return
   }  
-  if (!(container && (container?.scrollHeight - container.clientHeight - container.scrollTop) < 1)&&autoScroll) {
+  if (!(container && (container?.scrollHeight - container.clientHeight - container.scrollTop) < 1) && autoScroll&&loading.value) {
+    
     container.scrollTo({
       top: container?.scrollHeight - container.clientHeight,
       behavior: 'smooth',
@@ -94,12 +99,13 @@ watch(height, (newVal,oldVal) => {
   } 
 })
 
+
+
 onBeforeRouteLeave(() => {
   const container = displayContainer.value?.parentElement?.parentElement
   if (container) {
     cacheScroll = container.scrollTop  
-  }
-  
+  } 
 })
 
 </script>
