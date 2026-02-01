@@ -7,6 +7,7 @@ import { table } from 'table'
 import readline from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
 
+import packageJson from '../../package.json'
 import { apiRequest } from '../core/api'
 import {
   readConfig,
@@ -68,7 +69,7 @@ const program = new Command()
 program
   .name('memoh')
   .description('Memoh CLI')
-  .version('0.1.0')
+  .version(packageJson.version)
 
 const ensureAuth = () => {
   const token = readToken()
@@ -744,6 +745,13 @@ program
       }
     }
     rl.close()
+  })
+
+program
+  .command('version')
+  .description('Show version information')
+  .action(() => {
+    console.log(`Memoh CLI v${packageJson.version}`)
   })
 
 program.parseAsync(process.argv)

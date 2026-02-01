@@ -24,12 +24,14 @@ import (
 	"github.com/memohai/memoh/internal/settings"
 	"github.com/memohai/memoh/internal/server"
 	"github.com/memohai/memoh/internal/subagent"
+	"github.com/memohai/memoh/internal/version"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
+	log.Printf("Starting Memoh Agent %s", version.GetInfo())
 	ctx := context.Background()
 	cfgPath := os.Getenv("CONFIG_PATH")
 	cfg, err := config.Load(cfgPath)

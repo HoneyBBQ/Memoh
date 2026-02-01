@@ -5,20 +5,13 @@ import (
 	"log"
 
 	"github.com/memohai/memoh/internal/mcp"
+	"github.com/memohai/memoh/internal/version"
 	gomcp "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-var (
-	commitHash = "unknown"
-	version    = "unknown"
-)
-
 func main() {
-	if version == "unknown" {
-		version = "v0.0.0-dev+" + commitHash
-	}
 	server := gomcp.NewServer(
-		&gomcp.Implementation{Name: "memoh-mcp", Version: version},
+		&gomcp.Implementation{Name: "memoh-mcp", Version: version.GetInfo()},
 		nil,
 	)
 	mcp.RegisterTools(server)

@@ -8,7 +8,7 @@ COPY . .
 ARG TARGETARCH
 ARG COMMIT_HASH=unknown
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
-    go build -trimpath -ldflags "-s -w -X main.commitHash=${COMMIT_HASH}" -o /out/mcp ./cmd/mcp
+    go build -trimpath -ldflags "-s -w -X github.com/memohai/memoh/internal/version.CommitHash=${COMMIT_HASH}" -o /out/mcp ./cmd/mcp
 
 FROM busybox:latest
 COPY --from=build /out/mcp /mcp

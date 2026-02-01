@@ -16,6 +16,7 @@ import (
 
 	"github.com/memohai/memoh/internal/chat"
 	"github.com/memohai/memoh/internal/config"
+	"github.com/memohai/memoh/internal/version"
 )
 
 type cliOptions struct {
@@ -25,10 +26,15 @@ type cliOptions struct {
 	timeout    time.Duration
 	apiBaseURL string
 	jwtToken   string
+	showVersion bool
 }
 
 func main() {
 	opts := parseFlags()
+	if opts.showVersion {
+		fmt.Printf("Memoh CLI %s\n", version.GetInfo())
+		return
+	}
 	ctx := context.Background()
 
 	cfg, err := config.Load(opts.configPath)
@@ -87,6 +93,7 @@ func parseFlags() cliOptions {
 	flag.StringVar(&opts.jwtToken, "jwt", "", "JWT token (optional)")
 	flag.StringVar(&opts.apiBaseURL, "api-url", "", "API server base URL (e.g. http://127.0.0.1:8080)")
 	flag.DurationVar(&opts.timeout, "timeout", 30*time.Second, "Request timeout")
+	flag.BoolVar(&opts.showVersion, "version", false, "Show version information")
 	flag.Parse()
 
 	return opts
