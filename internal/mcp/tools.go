@@ -2,8 +2,10 @@ package mcp
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io/fs"
+	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -81,14 +83,43 @@ type FSApplyPatchOutput struct {
 	OK bool `json:"ok" jsonschema:"apply result"`
 }
 
+type FSMkdirInput struct {
+	Path string `json:"path" jsonschema:"relative directory path"`
+}
+
+type FSMkdirOutput struct {
+	OK bool `json:"ok" jsonschema:"mkdir result"`
+}
+
+type FSRenameInput struct {
+	Source      string `json:"source" jsonschema:"relative source path"`
+	Destination string `json:"destination" jsonschema:"relative destination path"`
+}
+
+type FSRenameOutput struct {
+	OK bool `json:"ok" jsonschema:"rename result"`
+}
+
+type FSReadBase64Input struct {
+	Path string `json:"path" jsonschema:"relative file path"`
+}
+
+type FSReadBase64Output struct {
+	Data     string `json:"data" jsonschema:"base64-encoded file bytes"`
+	MimeType string `json:"mime_type" jsonschema:"detected mime type"`
+}
+
 func RegisterTools(server *sdkmcp.Server) {
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "echo", Description: "echo input text"}, echoTool)
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.read", Description: "read file content"}, fsReadTool)
+	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.read_base64", Description: "read file bytes as base64"}, fsReadBase64Tool)
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.write", Description: "write file content"}, fsWriteTool)
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.list", Description: "list directory entries"}, fsListTool)
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.stat", Description: "stat file or directory"}, fsStatTool)
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.delete", Description: "delete file or directory"}, fsDeleteTool)
 	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.apply_patch", Description: "apply unified diff patch"}, fsApplyPatchTool)
+	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.mkdir", Description: "create directory (mkdir -p)"}, fsMkdirTool)
+	sdkmcp.AddTool(server, &sdkmcp.Tool{Name: "fs.rename", Description: "rename/move file or directory"}, fsRenameTool)
 }
 
 func echoTool(ctx context.Context, req *sdkmcp.CallToolRequest, input EchoInput) (
@@ -114,6 +145,55 @@ func fsReadTool(ctx context.Context, req *sdkmcp.CallToolRequest, input FSReadIn
 		return nil, FSReadOutput{}, err
 	}
 	return nil, FSReadOutput{Content: string(data)}, nil
+}
+
+func fsReadBase64Tool(ctx context.Context, req *sdkmcp.CallToolRequest, input FSReadBase64Input) (
+	*sdkmcp.CallToolResult,
+	FSReadBase64Output,
+	error,
+) {
+	root := dataRoot()
+	target, err := resolvePath(root, input.Path)
+	if err != nil {
+		return nil, FSReadBase64Output{}, err
+	}
+	data, err := os.ReadFile(target)
+	if err != nil {
+		return nil, FSReadBase64Output{}, err
+	}
+	ext := strings.ToLower(filepath.Ext(target))
+	mimeType := mime.TypeByExtension(ext)
+	if strings.TrimSpace(mimeType) == "" {
+		// Fallback mapping for common image/audio extensions.
+		switch ext {
+		case ".png":
+			mimeType = "image/png"
+		case ".jpg", ".jpeg":
+			mimeType = "image/jpeg"
+		case ".gif":
+			mimeType = "image/gif"
+		case ".webp":
+			mimeType = "image/webp"
+		case ".bmp":
+			mimeType = "image/bmp"
+		case ".svg":
+			mimeType = "image/svg+xml"
+		case ".mp3":
+			mimeType = "audio/mpeg"
+		case ".wav":
+			mimeType = "audio/wav"
+		case ".ogg":
+			mimeType = "audio/ogg"
+		case ".flac":
+			mimeType = "audio/flac"
+		default:
+			mimeType = "application/octet-stream"
+		}
+	}
+	return nil, FSReadBase64Output{
+		Data:     base64.StdEncoding.EncodeToString(data),
+		MimeType: mimeType,
+	}, nil
 }
 
 func fsWriteTool(ctx context.Context, req *sdkmcp.CallToolRequest, input FSWriteInput) (
@@ -265,6 +345,49 @@ func fsApplyPatchTool(ctx context.Context, req *sdkmcp.CallToolRequest, input FS
 		return nil, FSApplyPatchOutput{}, err
 	}
 	return nil, FSApplyPatchOutput{OK: true}, nil
+}
+
+func fsMkdirTool(ctx context.Context, req *sdkmcp.CallToolRequest, input FSMkdirInput) (
+	*sdkmcp.CallToolResult,
+	FSMkdirOutput,
+	error,
+) {
+	root := dataRoot()
+	target, err := resolvePath(root, input.Path)
+	if err != nil {
+		return nil, FSMkdirOutput{}, err
+	}
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		return nil, FSMkdirOutput{}, err
+	}
+	return nil, FSMkdirOutput{OK: true}, nil
+}
+
+func fsRenameTool(ctx context.Context, req *sdkmcp.CallToolRequest, input FSRenameInput) (
+	*sdkmcp.CallToolResult,
+	FSRenameOutput,
+	error,
+) {
+	root := dataRoot()
+	source, err := resolvePath(root, input.Source)
+	if err != nil {
+		return nil, FSRenameOutput{}, err
+	}
+	destination, err := resolvePath(root, input.Destination)
+	if err != nil {
+		return nil, FSRenameOutput{}, err
+	}
+
+	if _, err := os.Lstat(destination); err == nil {
+		return nil, FSRenameOutput{}, fmt.Errorf("destination already exists")
+	} else if !os.IsNotExist(err) {
+		return nil, FSRenameOutput{}, err
+	}
+
+	if err := os.Rename(source, destination); err != nil {
+		return nil, FSRenameOutput{}, err
+	}
+	return nil, FSRenameOutput{OK: true}, nil
 }
 
 func dataRoot() string {
