@@ -1,9 +1,9 @@
 <template>
-  <SidebarInset>
+  <SidebarInset class="grid grid-rows-[auto_auto_1fr]">
     <header
       class="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
     >
-      <div class="flex items-center gap-2 px-4">
+      <div class="flex items-center gap-2 px-4">     
         <SidebarTrigger class="-ml-1" />
         <Separator
           orientation="vertical"
@@ -34,13 +34,19 @@
         </Breadcrumb>
       </div>
     </header>
-    <main class="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <router-view v-slot="{ Component }">
-        <KeepAlive>
-          <component :is="Component" />
-        </KeepAlive>
-      </router-view>
-    </main>
+    <Separator />
+    <section class="w-full relative">
+      <ScrollArea class="absolute! inset-0">
+        <router-view
+          v-slot="{ Component }"
+          class="p-4"
+        >
+          <KeepAlive>
+            <component :is="Component" />
+          </KeepAlive>
+        </router-view>
+      </ScrollArea>
+    </section>
   </SidebarInset>
 </template>
 
@@ -53,6 +59,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
   Separator,
+  ScrollArea
   // DropdownMenu,
   // DropdownMenuContent,
   // DropdownMenuItem,
@@ -60,8 +67,6 @@ import {
 } from '@memoh/ui'
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
-// import SvgIcon from '@jamescoyle/vue-icon'
-// import { mdiTranslate } from '@mdi/js'
 
 const route = useRoute()
 
