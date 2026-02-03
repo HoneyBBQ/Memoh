@@ -65,5 +65,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/docs/.vitepress/dist
-          cname: memoh.ai
+          cname: docs.memoh.ai
 
