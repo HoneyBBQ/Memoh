@@ -665,9 +665,6 @@ func (h *ContainerdHandler) ListSnapshots(c echo.Context) error {
 	}
 
 	snapshotKey := strings.TrimSpace(data.Info.StorageRef.Key)
-	if snapshotKey == "" {
-		return echo.NewHTTPError(http.StatusInternalServerError, "container snapshot key is empty")
-	}
 
 	runtimeByName := make(map[string]ctr.SnapshotInfo, len(data.RuntimeSnapshots))
 	for _, info := range data.RuntimeSnapshots {
@@ -677,53 +674,26 @@ func (h *ContainerdHandler) ListSnapshots(c echo.Context) error {
 		}
 		runtimeByName[name] = info
 	}
-	lineage, ok := snapshotLineage(snapshotKey, data.RuntimeSnapshots)
-	if !ok {
+	var lineage []ctr.SnapshotInfo
+	if snapshotKey == "" {
+		h.logger.Warn("container snapshot key is empty",
+			slog.String("container_id", data.ContainerID),
+			slog.String("snapshotter", data.Snapshotter),
+		)
+	} else if found, ok := snapshotLineage(snapshotKey, data.RuntimeSnapshots); ok {
+		lineage = found
+	} else {
 		h.logger.Warn("container snapshot chain root not found",
 			slog.String("container_id", data.ContainerID),
 			slog.String("snapshotter", data.Snapshotter),
 			slog.String("snapshot_key", snapshotKey),
 		)
-		return echo.NewHTTPError(http.StatusInternalServerError, "container snapshot chain not found")
 	}
 
 	items := make([]SnapshotInfo, 0, len(lineage)+len(data.ManagedMeta))
 	seen := make(map[string]struct{}, len(lineage)+len(data.ManagedMeta))
 	appendRuntime := func(runtimeInfo ctr.SnapshotInfo, fallbackSource string, meta *workspace.ManagedSnapshotMeta) {
-		source := fallbackSource
-		managed := false
-		var version *int
-		displayName := ""
-		if meta != nil {
-			if meta.Source != "" {
-				source = meta.Source
-			}
-			managed = true
-			version = meta.Version
-			displayName = strings.TrimSpace(meta.DisplayName)
-		}
-		name := displayName
-		if name == "" {
-			if version != nil {
-				name = fmt.Sprintf("Version %d", *version)
-			} else {
-				name = runtimeInfo.Name
-			}
-		}
-		items = append(items, SnapshotInfo{
-			Snapshotter: data.Snapshotter,
-			Name:        name,
-			DisplayName: displayName,
-			RuntimeName: runtimeInfo.Name,
-			Parent:      runtimeInfo.Parent,
-			Kind:        runtimeInfo.Kind,
-			CreatedAt:   runtimeInfo.Created,
-			UpdatedAt:   runtimeInfo.Updated,
-			Labels:      runtimeInfo.Labels,
-			Source:      source,
-			Managed:     managed,
-			Version:     version,
-		})
+		items = append(items, snapshotResponse(data.Snapshotter, runtimeInfo, fallbackSource, meta))
 		seen[strings.TrimSpace(runtimeInfo.Name)] = struct{}{}
 	}
 
@@ -918,6 +888,65 @@ func toContainerStorageMetricsResponse(metrics *workspace.ContainerStorageMetric
 	return &ContainerStorageMetricsResponse{
 		Path:      metrics.Path,
 		UsedBytes: metrics.UsedBytes,
+	}
+}
+
+func snapshotResponse(defaultSnapshotter string, runtimeInfo ctr.SnapshotInfo, fallbackSource string, meta *workspace.ManagedSnapshotMeta) SnapshotInfo {
+	source := fallbackSource
+	managed := false
+	var version *int
+	displayName := ""
+	snapshotter := defaultSnapshotter
+	parent := strings.TrimSpace(runtimeInfo.Parent)
+	createdAt := runtimeInfo.Created
+	updatedAt := runtimeInfo.Updated
+	if meta != nil {
+		if meta.Source != "" {
+			source = meta.Source
+		}
+		if meta.Snapshotter != "" {
+			snapshotter = meta.Snapshotter
+		}
+		if parent == "" {
+			parent = strings.TrimSpace(meta.ParentRuntimeSnapshotName)
+		}
+		if !meta.CreatedAt.IsZero() {
+			if createdAt.IsZero() {
+				createdAt = meta.CreatedAt
+			}
+			if updatedAt.IsZero() {
+				updatedAt = meta.CreatedAt
+			}
+		}
+		managed = true
+		version = meta.Version
+		displayName = strings.TrimSpace(meta.DisplayName)
+	}
+	kind := runtimeInfo.Kind
+	if kind == "" && strings.EqualFold(snapshotter, "archive") {
+		kind = "archive"
+	}
+	name := displayName
+	if name == "" {
+		if version != nil {
+			name = fmt.Sprintf("Version %d", *version)
+		} else {
+			name = runtimeInfo.Name
+		}
+	}
+	return SnapshotInfo{
+		Snapshotter: snapshotter,
+		Name:        name,
+		DisplayName: displayName,
+		RuntimeName: runtimeInfo.Name,
+		Parent:      parent,
+		Kind:        kind,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+		Labels:      runtimeInfo.Labels,
+		Source:      source,
+		Managed:     managed,
+		Version:     version,
 	}
 }
 
